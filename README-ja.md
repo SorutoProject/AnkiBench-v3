@@ -1,4 +1,4 @@
-(English)[README.md] | 日本語
+[English](README.md) | 日本語
 
 # AnkiBench-v3
 暗記リストの作成の高速化に焦点を当てた、AnkiBenchの第３バージョン。
