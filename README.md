@@ -1,3 +1,4 @@
+English | [日本語](README-ja.md)
 # AnkiBench-v3
 The 3rd edition of AnkiBench. Focused on faster making questions list.
 AnkiBench help you memorize anything more quickly.
