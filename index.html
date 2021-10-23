@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnkiBench v3</title>
+</head>
+<body>
+    <style>
+        body{
+            font-family: sans-serif;
+        }
+        div[v-cloak]{
+            display:none;
+        }
+        div.header{
+            position:fixed;
+            top:0;
+            left:0;
+            width:100%;
+            height:45px;
+            line-height:45px;
+            background: #00a15e;
+            color:#fff;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+        div.header span{
+            padding-left:10px;
+        }
+        div.content{
+            padding-top:45px;
+            padding-bottom:40px;
+        }
+        div.footer{
+            position: fixed;
+            bottom:0;
+            left:0;
+            width:100%;
+            height:40px;
+        }
+
+        .has-centered-text{
+            text-align:center;
+        }
+
+        button{
+            background:#ddd;
+            border-radius:5px;
+            border:none;
+            padding:8px 15px;
+            cursor: pointer;
+        }
+
+        ul.list{
+            list-style: disclosure-closed;
+        }
+        ul.list li{
+            padding: 10px 5px;
+            border-bottom: 1px solid #ddd;
+            cursor:pointer;
+        }
+
+        div.progress-bar{
+            position: relative;
+            width:100%;
+            height:2px;
+            background-color: #ddd;
+            margin-bottom:10px;
+        }
+        div.progress-bar div.progress-bar-body{
+            position:absolute;
+            top:0;
+            left:0;
+            height:100%;
+            background: #00a15e;
+            transition-duration: 0.3s;
+        }
+    </style>
+    <div id="app" v-cloak>
+        <div class="header">
+            <button style="height:45px;background:none;float:left;" v-if="page !== 'index'" @click="back">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#ffffff"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+            </button>
+            <span>{{title}}</span>
+        </div>
+        <!--pages-->
+        <div v-if="page === 'index'" class="content">
+            <p class="has-centered-text">Please select your questions list file:
+                <br>
+                <button @click="openFileSelectModal">Open Ankibench Questions List File</button>
+            </p>
+        </div>
+        <div v-if="page === 'list'" class="content">
+            <ul class="list">
+                <li v-for="(unit, index) in materialData" @click="startUnit(index)">
+                    {{unit.name}}
+                </li>
+            </ul>
+
+            <button @click="openFileSelectModal">Open Other Question File...</button>
+        </div>
+        <div v-if="page === 'play'">
+           <div v-if="!play.completed">
+                <div class="content">
+                    <div class="progress-bar">
+                        <div class="progress-bar-body" :style="{'width': ((play.numberOfQuestions - play.currentNumberOfQuestions) / play.numberOfQuestions) * 100 + '%'}"></div>
+                    </div>
+                    <span style="font-weight: bold;font-size:14pt;">{{play.currentQuestions[0].question}}</span>
+                    <ul v-if="play.isShowAnswer">
+                        <li v-for="answer in play.currentQuestions[0].answers">
+                            {{answer}}
+                        </li>
+                    </ul>
+                </div>
+                <div class="footer has-centered-text">
+                    <button @click="play.isShowAnswer = true" v-if="!play.isShowAnswer" style="background-color:#00a15e;color:#fff;">Show the Answer</button>
+                    <button @click="play.ng" style="width:100px;background-color:#006eff;color:#fff;" v-if="play.isShowAnswer">NG</button>
+                    <button @click="play.ok" style="width:100px;background-color:#cc337a;color:#fff;" v-if="play.isShowAnswer">OK</button>
+                </div>
+           </div>
+           <div v-if="play.completed" class="content">
+               You've completed.
+           </div>
+        </div>
+    </div>
+<script src="https://unpkg.com/petite-vue"></script>
+<script>
+materialData = [];
+
+PetiteVue.createApp({
+    title: "AnkiBench",
+    page:"index",
+    materialTitle: "",
+    play:{
+        currentQuestions:[],
+        numberOfQuestions: 0,
+        currentNumberOfQuestions: 0,
+        completed: false,
+        isShowAnswer: false,
+        ok(){
+            this.isShowAnswer = false;
+            this.currentNumberOfQuestions--;
+
+            if(this.currentQuestions.length === 1){
+                this.completed = true;
+            }else{
+                this.currentQuestions.shift();
+            }
+        },
+        ng(){
+            this.isShowAnswer = false;
+            const currentQuestion = this.currentQuestions[0];
+            this.currentQuestions.shift();
+            this.currentQuestions.push(currentQuestion);
+        }
+    },
+    
+    back(){
+        switch(this.page){
+            case "list":
+                this.page = "index";
+                this.title = "AnkiBench";
+                break;
+            case "play":
+                if(this.play.currentNumberOfQuestions !== 0){
+                    if(!confirm("Do you really want to exit now?")){
+                        return;
+                    }
+                }
+                this.page = "list";
+                this.title = this.materialTitle;
+                break;
+        }
+    },
+    openFileSelectModal(){
+        const fileEl = document.createElement("input");
+        fileEl.setAttribute("type", "file");
+        fileEl.setAttribute("accept", ".txt");
+
+        const self = this;
+
+        fileEl.addEventListener("change", function(e){
+            const reader = new FileReader();
+            reader.onload = function(){
+                const materialRawData = reader.result.trim();
+                const materialTitle = materialRawData.split("\n")[0];
+                const materialSplittedByEmptyLine = materialRawData.split("\n\n").slice(1); //remove materialTitle by using array.slice(1)
+                
+                let currentMaterialData = [];
+                let currentUnitNumber = -1;
+
+                materialSplittedByEmptyLine.forEach(function(data){
+                    //new unit title
+                    if(data.split("\n").length === 1){
+                        console.log("new unit");
+                        currentUnitNumber++;
+                        currentMaterialData[currentUnitNumber] = {
+                            name: data,
+                            questions:[]
+                        }
+                    }
+                    //question
+                    else{
+                        currentMaterialData[currentUnitNumber].questions.push({
+                            question: data.split("\n")[0],
+                            answers: data.split("\n").slice(1)
+                        });
+                    }
+                });
+                console.log(materialTitle, materialSplittedByEmptyLine, currentMaterialData);
+                
+                self.title = self.materialTitle = materialTitle;
+
+                materialData = currentMaterialData;
+                self.page = "list";
+            }
+            reader.readAsText(fileEl.files[0]);
+        });
+        fileEl.click();
+    },
+
+    startUnit(index){
+        //shuffle questions
+        const randomizeArray = function(array){
+            for(let i = array.length - 1; i > 0; i--){
+                const r = Math.floor(Math.random() * (i + 1));
+                const tmp = array[i];
+                array[i] = array[r];
+                array[r] = tmp;
+            }
+            return array;
+        }
+
+        const targetUnitData = materialData[index].questions.slice();
+        this.play.currentQuestions = randomizeArray(targetUnitData);
+        this.play.completed = false;
+        this.page = "play";
+        this.title = `${materialData[index].name}`;
+        this.play.currentNumberOfQuestions = this.play.numberOfQuestions = targetUnitData.length;
+
+        console.log(materialData[index].questions, targetUnitData.length);
+    }
+}).mount("#app");
+</script>
+</body>
+</html>
