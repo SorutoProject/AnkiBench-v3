@@ -4,7 +4,7 @@ The 3rd edition of AnkiBench. Focused on faster making questions list.
 AnkiBench help you memorize anything more quickly.
 
 ## How to use
-1. create a material file (refer to [How to make questions list](#how-to-make-questions-list))
+1. create a material file (refer to [How to make questions list](#how-to-make-questions-list)) and save it as `.txt` file. Please use Windows'	line feed code.
 2. Open https://sorutoproject.github.io/AnkiBench-v3/index.html
 3. Open the file you created in step 1.
 4. Enjoy your study!
