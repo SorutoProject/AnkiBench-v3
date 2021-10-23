@@ -183,15 +183,15 @@ PetiteVue.createApp({
             const reader = new FileReader();
             reader.onload = function(){
                 const materialRawData = reader.result.trim();
-                const materialTitle = materialRawData.split("\n")[0];
-                const materialSplittedByEmptyLine = materialRawData.split("\n\n").slice(1); //remove materialTitle by using array.slice(1)
+                const materialTitle = materialRawData.split("\r\n")[0];
+                const materialSplittedByEmptyLine = materialRawData.split("\r\n\r\n").slice(1); //remove materialTitle by using array.slice(1)
                 
                 let currentMaterialData = [];
                 let currentUnitNumber = -1;
 
                 materialSplittedByEmptyLine.forEach(function(data){
                     //new unit title
-                    if(data.split("\n").length === 1){
+                    if(data.split("\r\n").length === 1){
                         console.log("new unit");
                         currentUnitNumber++;
                         currentMaterialData[currentUnitNumber] = {
@@ -202,8 +202,8 @@ PetiteVue.createApp({
                     //question
                     else{
                         currentMaterialData[currentUnitNumber].questions.push({
-                            question: data.split("\n")[0],
-                            answers: data.split("\n").slice(1)
+                            question: data.split("\r\n")[0],
+                            answers: data.split("\r\n").slice(1)
                         });
                     }
                 });
